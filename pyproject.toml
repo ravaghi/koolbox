@@ -1,0 +1,59 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "koolbox"
+version = "0.1.0"
+description = "A collection of utility functions designed to simplify training machine learning models for Kaggle competitions."
+readme = "README.md"
+
+authors = [
+    { name = "Mahdi Ravaghi" }
+]
+
+maintainers = [
+    { name = "Mahdi Ravaghi" }
+]
+
+license = { text = "Apache Software License 2.0" }
+
+keywords = [
+    "machine-learning",
+    "kaggle",
+    "training",
+    "cross-validation",
+    "model-evaluation"
+]
+
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+requires-python = ">=3.7"
+
+dependencies = [
+    "pandas>=1.0.0",
+    "scikit-learn>=0.24.0",
+    "numpy>=1.19.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ravaghi/koolbox"
+"Bug Tracker" = "https://github.com/ravaghi/koolbox/issues"
+Documentation = "https://github.com/ravaghi/koolbox#readme"
+Repository = "https://github.com/ravaghi/koolbox.git" 
