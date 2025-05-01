@@ -98,7 +98,10 @@ class BaseTrainer(ABC):
         numpy.ndarray
             The predictions.
         """
-        return estimator.predict(X) if self.task == "regression" else estimator.predict_proba(X)[:, 1]
+        if self.task == "regression":
+            return np.maximum(estimator.predict(X), 0)
+        else:
+            return estimator.predict_proba(X)[:, 1]
     
     def _calculate_metric(self, y_true: pd.Series, y_pred: np.ndarray) -> float:
         """
