@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "koolbox"
-version = "0.1.1"
+version = "0.1.2"
 description = "A collection of utility functions designed to simplify training machine learning models for Kaggle competitions."
 readme = "README.md"
 

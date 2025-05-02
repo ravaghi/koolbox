@@ -9,4 +9,4 @@ This package provides utilities for:
 """
 from .trainer.trainer import Trainer
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
