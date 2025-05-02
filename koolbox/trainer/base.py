@@ -7,9 +7,10 @@ metric calculation, and prediction functionality.
 from sklearn.model_selection import BaseCrossValidator
 from sklearn.base import BaseEstimator
 from typing import Callable, Dict
-import numpy as np
-import pandas as pd
+from datetime import datetime
 from abc import ABC
+import pandas as pd
+import numpy as np
 import joblib 
 import os
 
@@ -93,15 +94,7 @@ class BaseTrainer(ABC):
             return
         
         os.makedirs(self.save_path, exist_ok=True)
-        path = f"{self.save_path}/{self.estimator_name}_trainer.pkl"
-        
-        i = 1
-        folder_exists = os.path.exists(path)
-        while folder_exists:
-            path = f"{self.save_path}/{self.estimator_name}_{i}.pkl"
-            i += 1
-            folder_exists = os.path.exists(path)
-            
+        path = f"{self.save_path}/{self.estimator_name.lower()}_trainer_{datetime.now().strftime('%Y%m%d%H%M%S')}.pkl"
         joblib.dump(self, path)
         
     def _get_y_preds(self, estimator: BaseEstimator, X: pd.DataFrame) -> np.ndarray:
