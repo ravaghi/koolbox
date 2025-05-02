@@ -32,7 +32,14 @@ class Trainer(BaseTrainer):
         """
         super().__init__(*args, **kwargs)
 
-    def fit(self, X: pd.DataFrame, y: pd.Series, fit_args: Dict = {}) -> None:
+    def fit(
+        self, 
+        X: pd.DataFrame, 
+        y: pd.Series, 
+        extra_X: pd.DataFrame = None,
+        extra_y: pd.Series = None,
+        fit_args: Dict = {}
+    ) -> None:
         """
         Fit the estimator to the data using cross-validation.
         
@@ -45,6 +52,10 @@ class Trainer(BaseTrainer):
             The feature matrix.
         y : pandas.Series
             The target variable.
+        extra_X : pandas.DataFrame, default=None
+            Additional feature matrix to use for training.
+        extra_y : pandas.Series, default=None
+            Additional target variable to use for training.
         fit_args : dict, default={}
             Additional arguments to pass to the estimator's fit method.
             
@@ -73,6 +84,10 @@ class Trainer(BaseTrainer):
 
             X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
+            
+            if extra_X is not None and extra_y is not None:
+                X_train = pd.concat([X_train, extra_X])
+                y_train = pd.concat([y_train, extra_y])
 
             if self.use_early_stopping:
                 fit_args["eval_set"] = [(X_val, y_val)]
