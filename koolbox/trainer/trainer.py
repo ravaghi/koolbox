@@ -109,6 +109,8 @@ class Trainer(BaseTrainer):
         self.fold_scores = fold_scores
         self.oof_preds = oof_preds
         self.is_fitted = True
+        
+        self._save_results()
 
         time_taken = time.time() - start_time
         if self.verbose:

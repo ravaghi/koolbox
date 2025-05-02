@@ -10,6 +10,8 @@ from typing import Callable, Dict
 import numpy as np
 import pandas as pd
 from abc import ABC
+import joblib 
+import os
 
 from .validator import Validator
 
@@ -56,7 +58,9 @@ class BaseTrainer(ABC):
         metric_args: Dict = {},
         use_early_stopping: bool = False,
         cv_args: Dict = {},
-        verbose: bool = True
+        verbose: bool = True,
+        save_path: str = "./logs",
+        save: bool = False
     ) -> None:
         self.estimator = estimator
         self.cv = cv
@@ -68,6 +72,8 @@ class BaseTrainer(ABC):
         self.cv_args = cv_args
         self.use_early_stopping = use_early_stopping
         self.verbose = verbose
+        self.save_path = save_path
+        self.save = save
         
         self.y_min = None
         self.y_max = None
@@ -81,6 +87,22 @@ class BaseTrainer(ABC):
         self.oof_preds = None
 
         Validator.validate_task(self.task)
+        
+    def _save_results(self) -> None:
+        if not self.save:
+            return
+        
+        os.makedirs(self.save_path, exist_ok=True)
+        path = f"{self.save_path}/{self.estimator_name}_trainer.pkl"
+        
+        i = 1
+        folder_exists = os.path.exists(path)
+        while folder_exists:
+            path = f"{self.save_path}/{self.estimator_name}_{i}.pkl"
+            i += 1
+            folder_exists = os.path.exists(path)
+            
+        joblib.dump(self, path)
         
     def _get_y_preds(self, estimator: BaseEstimator, X: pd.DataFrame) -> np.ndarray:
         """
