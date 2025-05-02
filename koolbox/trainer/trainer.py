@@ -56,6 +56,9 @@ class Trainer(BaseTrainer):
         """
         Validator.validate_data_shapes(X, y)
         Validator.validate_estimator_has_method(self.estimator, "fit")
+        
+        self.y_min = y.min()
+        self.y_max = y.max()
 
         if self.verbose:
             print(f"Training {self.estimator_name}\n")

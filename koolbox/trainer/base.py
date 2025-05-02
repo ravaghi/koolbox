@@ -68,6 +68,9 @@ class BaseTrainer(ABC):
         self.cv_args = cv_args
         self.use_early_stopping = use_early_stopping
         self.verbose = verbose
+        
+        self.y_min = None
+        self.y_max = None
 
         self.estimator_name = self.estimator.__class__.__name__
         self.metric_name = self.metric.__name__
@@ -99,7 +102,7 @@ class BaseTrainer(ABC):
             The predictions.
         """
         if self.task == "regression":
-            return np.maximum(estimator.predict(X), 0)
+            return estimator.predict(X).clip(self.y_min, self.y_max)
         else:
             return estimator.predict_proba(X)[:, 1]
     
