@@ -8,5 +8,6 @@ This package provides utilities for:
 - Evaluation and model validation
 """
 from .trainer.trainer import Trainer
+from .models.sequential_feature_selector import SequentialFeatureSelector
 
 __version__ = "0.1.2"
