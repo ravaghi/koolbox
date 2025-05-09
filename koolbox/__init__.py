@@ -9,5 +9,6 @@ This package provides utilities for:
 """
 from .trainer.trainer import Trainer
 from .models.sequential_feature_selector import SequentialFeatureSelector
+from .models.weighted_ensemble_regressor import WeightedEnsembleRegressor
 
 __version__ = "0.1.3"
