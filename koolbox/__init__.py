@@ -10,4 +10,4 @@ This package provides utilities for:
 from .trainer.trainer import Trainer
 from .models.sequential_feature_selector import SequentialFeatureSelector
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
