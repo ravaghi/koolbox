@@ -4,11 +4,20 @@ Sequential Feature Selector module for feature selection.
 This module provides a sequential feature selection implementation that can
 perform both forward and backward selection based on cross-validated model performance.
 """
+from typing import Any, Callable, List, Literal, Tuple, Union
+import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.utils.validation import check_is_fitted
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import make_scorer
-import numpy as np
+
+from .validators import (
+    validate_objective,
+    validate_direction,
+    validate_metric,
+    validate_input_data
+)
 
 
 class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
@@ -40,13 +49,13 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
 
     def __init__(
         self,
-        estimator,
-        cv,
-        objective,
-        metric,
-        direction='backward',
-        verbose=True
-    ):
+        estimator: BaseEstimator,
+        cv: Union[int, Any],
+        objective: Literal['maximize', 'minimize'],
+        metric: Callable,
+        direction: Literal['forward', 'backward'] = 'backward',
+        verbose: bool = True
+    ) -> None:
         self.estimator = estimator
         self.cv = cv
         self.objective = objective
@@ -54,7 +63,11 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         self.direction = direction
         self.verbose = verbose
 
-    def fit(self, X, y):
+        validate_objective(objective)
+        validate_direction(direction)
+        validate_metric(metric)
+
+    def fit(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> 'SequentialFeatureSelector':
         """
         Perform feature selection on the input data.
         
@@ -62,31 +75,25 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         ----------
         X : pandas.DataFrame
             The feature matrix.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
         -------
-        self : object
+        self : SequentialFeatureSelector
             Returns the instance itself.
-            
-        Raises
-        ------
-        ValueError
-            If direction is not 'forward' or 'backward'.
         """
-        if self.direction not in ['forward', 'backward']:
-            raise ValueError(
-                "direction must be either 'forward' or 'backward'")
+        validate_input_data(X, y)
 
         if self.direction == 'forward':
-            self.selected_features, self.best_score = self._fit_forward(X, y)
+            self.selected_features_, self.best_score_ = self._fit_forward(X, y)
         else:
-            self.selected_features, self.best_score = self._fit_backward(X, y)
+            self.selected_features_, self.best_score_ = self._fit_backward(
+                X, y)
 
         return self
 
-    def _fit_backward(self, X, y):
+    def _fit_backward(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> Tuple[List[str], float]:
         """
         Perform backward feature selection.
         
@@ -97,7 +104,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         ----------
         X : pandas.DataFrame
             The feature matrix.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
@@ -108,7 +115,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
             The best score achieved.
         """
         all_features = X.columns.tolist()
-        removed_features = []
+        removed_features: List[str] = []
 
         best_score = self._get_score(X, y, all_features)
         if self.verbose:
@@ -138,7 +145,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
 
         return list(set(all_features) - set(removed_features)), best_score
 
-    def _fit_forward(self, X, y):
+    def _fit_forward(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> Tuple[List[str], float]:
         """
         Perform forward feature selection.
         
@@ -149,7 +156,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         ----------
         X : pandas.DataFrame
             The feature matrix.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
@@ -160,7 +167,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
             The best score achieved.
         """
         all_features = X.columns.tolist()
-        added_features = []
+        added_features: List[str] = []
 
         best_score = float('-inf')
 
@@ -185,7 +192,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
 
         return added_features, best_score
 
-    def _get_score(self, X, y, feature_names):
+    def _get_score(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray], feature_names: List[str]) -> float:
         """
         Calculate the cross-validated score for a subset of features.
         
@@ -193,7 +200,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         ----------
         X : pandas.DataFrame
             The feature matrix.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
         feature_names : list
             The names of features to include in the evaluation.
@@ -217,7 +224,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
 
         return -np.mean(scores) if self.objective == 'minimize' else np.mean(scores)
 
-    def transform(self, X):
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
         Transform the data by selecting only the chosen features.
         
@@ -230,16 +237,12 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         -------
         pandas.DataFrame
             Transformed data with only the selected features.
-            
-        Raises
-        ------
-        ValueError
-            If the estimator is not fitted.
         """
-        check_is_fitted(self, 'selected_features')
-        return X[self.selected_features]
+        check_is_fitted(self, ['selected_features_', 'best_score_'])
 
-    def fit_transform(self, X, y):
+        return X[self.selected_features_]
+
+    def fit_transform(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> pd.DataFrame:
         """
         Fit to data, then transform it.
         
@@ -247,7 +250,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         ----------
         X : pandas.DataFrame
             The feature matrix.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
@@ -257,7 +260,7 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         """
         return self.fit(X, y).transform(X)
 
-    def _more_tags(self):
+    def _more_tags(self) -> dict:
         """
         Get sklearn estimator tags.
         
@@ -269,3 +272,39 @@ class SequentialFeatureSelector(BaseEstimator, TransformerMixin):
         return {
             'requires_y': True,
         }
+
+    @property
+    def selected_features(self) -> List[str]:
+        """
+        Get the selected features.
+        
+        Returns
+        -------
+        list
+            The selected features.
+            
+        Raises
+        ------
+        ValueError
+            If the estimator is not fitted.
+        """
+        check_is_fitted(self, ['selected_features_', 'best_score_'])
+        return self.selected_features_
+
+    @property
+    def best_score(self) -> float:
+        """
+        Get the best score achieved during feature selection.
+        
+        Returns
+        -------
+        float
+            The best score.
+            
+        Raises
+        ------
+        ValueError
+            If the estimator is not fitted.
+        """
+        check_is_fitted(self, ['selected_features_', 'best_score_'])
+        return self.best_score_

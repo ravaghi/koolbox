@@ -1,8 +1,14 @@
 from sklearn.base import BaseEstimator, RegressorMixin
-from typing import Dict, Any
+from typing import Dict, Any, Callable, Literal, Union
 import pandas as pd
 import numpy as np
 import optuna
+
+from .validators import (
+    validate_objective,
+    validate_metric,
+    validate_input_data
+)
 
 
 class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
@@ -30,24 +36,27 @@ class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
 
     def __init__(
         self,
-        objective,
-        metric,
-        n_trials=100,
-        random_state=42,
-        verbose=False,
-    ):
+        objective: Literal['maximize', 'minimize'],
+        metric: Callable,
+        n_trials: int = 100,
+        random_state: int = 42,
+        verbose: bool = False,
+    ) -> None:
         self.objective = objective
         self.metric = metric
         self.n_trials = n_trials
         self.random_state = random_state
         self.verbose = verbose
 
+        validate_objective(objective)
+        validate_metric(metric)
+
         if verbose:
             optuna.logging.set_verbosity(optuna.logging.INFO)
         else:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> 'WeightedEnsembleRegressor':
+    def fit(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> 'WeightedEnsembleRegressor':
         """
         Fit the weighted ensemble regressor.
         
@@ -56,15 +65,17 @@ class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
         X : pandas.DataFrame
             The feature matrix containing model predictions.
             Each column represents predictions from a different model.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
         -------
-        self : object
+        self : WeightedEnsembleRegressor
             Returns the instance itself.
         """
-        def objective(trial):
+        validate_input_data(X, y)
+
+        def objective(trial: optuna.Trial) -> float:
             weights = np.array([
                 trial.suggest_float(column, 0.0, 1.0) for column in X.columns.tolist()
             ])
@@ -91,7 +102,7 @@ class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
 
         return self
 
-    def predict(self, X: pd.DataFrame) -> pd.Series:
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
         """
         Predict using the weighted ensemble regressor.
         
@@ -102,12 +113,18 @@ class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
             
         Returns
         -------
-        pandas.Series
+        numpy.ndarray
             The predicted values.
         """
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError("X must be a pandas DataFrame.")
+
+        if hasattr(self, 'weights_') == False:
+            raise ValueError("Estimator has not been fitted yet.")
+
         return np.dot(X, self.weights_)
 
-    def get_params(self, deep=True) -> Dict[str, Any]:
+    def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """
         Get parameters for this estimator.
         
@@ -141,7 +158,7 @@ class WeightedEnsembleRegressor(BaseEstimator, RegressorMixin):
             
         Returns
         -------
-        self : object
+        self : WeightedEnsembleRegressor
             Returns the instance itself.
         """
         for parameter, value in parameters.items():

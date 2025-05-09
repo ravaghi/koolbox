@@ -1,8 +1,15 @@
 from sklearn.base import BaseEstimator, ClassifierMixin
-from typing import Dict, Any
+from typing import Dict, Any, Callable, Literal, Union
 import pandas as pd
 import numpy as np
 import optuna
+
+from .validators import (
+    validate_objective,
+    validate_metric,
+    validate_threshold,
+    validate_input_data
+)
 
 
 class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
@@ -32,13 +39,13 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
 
     def __init__(
         self,
-        objective,
-        metric,
-        n_trials=100,
-        random_state=42,
-        verbose=False,
-        threshold=0.5,
-    ):
+        objective: Literal['maximize', 'minimize'],
+        metric: Callable,
+        n_trials: int = 100,
+        random_state: int = 42,
+        verbose: bool = False,
+        threshold: float = 0.5,
+    ) -> None:
         self.objective = objective
         self.metric = metric
         self.n_trials = n_trials
@@ -46,12 +53,16 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
         self.verbose = verbose
         self.threshold = threshold
 
+        validate_objective(objective)
+        validate_metric(metric)
+        validate_threshold(threshold)
+
         if verbose:
             optuna.logging.set_verbosity(optuna.logging.INFO)
         else:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> 'WeightedEnsembleClassifier':
+    def fit(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> 'WeightedEnsembleClassifier':
         """
         Fit the weighted ensemble classifier.
         
@@ -60,17 +71,19 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
         X : pandas.DataFrame
             The feature matrix containing model probability predictions.
             Each column represents predictions from a different model.
-        y : pandas.Series
+        y : pandas.Series or numpy.ndarray
             The target values.
             
         Returns
         -------
-        self : object
+        self : WeightedEnsembleClassifier
             Returns the instance itself.
         """
+        validate_input_data(X, y)
+
         self.classes_ = np.unique(y)
 
-        def objective(trial):
+        def objective(trial: optuna.Trial) -> float:
             weights = np.array([
                 trial.suggest_float(column, 0.0, 1.0) for column in X.columns.tolist()
             ])
@@ -117,6 +130,12 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
         numpy.ndarray
             The predicted class probabilities.
         """
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError("X must be a pandas DataFrame.")
+
+        if hasattr(self, 'weights_') == False:
+            raise ValueError("Estimator has not been fitted yet.")
+
         if len(self.classes_) == 2:
             proba = np.dot(X, self.weights_)
             return np.vstack((1 - proba, proba)).T
@@ -137,13 +156,19 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
         numpy.ndarray
             The predicted class labels.
         """
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError("X must be a pandas DataFrame.")
+
+        if hasattr(self, 'weights_') == False:
+            raise ValueError("Estimator has not been fitted yet.")
+
         if len(self.classes_) == 2:
             proba = self.predict_proba(X)[:, 1]
             return (proba >= self.threshold).astype(int)
         else:
             return np.argmax(self.predict_proba(X), axis=1)
 
-    def get_params(self, deep=True) -> Dict[str, Any]:
+    def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """
         Get parameters for this estimator.
         
@@ -178,7 +203,7 @@ class WeightedEnsembleClassifier(BaseEstimator, ClassifierMixin):
             
         Returns
         -------
-        self : object
+        self : WeightedEnsembleClassifier
             Returns the instance itself.
         """
         for parameter, value in parameters.items():
