@@ -70,3 +70,25 @@ X_test = sfs.transform(X_test)
 
 selected_features = sfs.selected_features
 ```
+
+### WeightedEnsemble[Regressor, Classifier]
+
+```python
+from sklearn.metrics import root_mean_squared_error
+import pandas as pd
+
+from koolbox import WeightedEnsembleRegressor
+
+
+X = pd.DataFrame(...)
+y = pd.Series(...)
+X_test = pd.DataFrame(...)
+
+model = WeightedEnsembleRegressor(
+    objective="minimize",
+    metric=root_mean_squared_error
+)
+
+model.fit(X, y)
+preds = model.predict(X_test)
+```
