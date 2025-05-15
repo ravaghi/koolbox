@@ -1,5 +1,7 @@
 # Kaggle Toolbox
 
+![PyPI - Version][1] ![Pepy Total Downloads][2] ![GitHub License][3]
+
 Koolbox is a collection of helper functions and utilities designed to simplify training  machine learning models in Kaggle competitions. This library abstracts away repetitive boilerplate code, allowing competitors to focus on more important tasks.
 
 ## Installation
@@ -92,3 +94,7 @@ model = WeightedEnsembleRegressor(
 model.fit(X, y)
 preds = model.predict(X_test)
 ```
+
+[1]: https://img.shields.io/pypi/v/koolbox
+[2]: https://img.shields.io/pepy/dt/koolbox
+[3]: https://img.shields.io/github/license/ravaghi/koolbox
